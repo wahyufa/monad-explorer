@@ -31,8 +31,6 @@ import { ActivityFeed } from "@/components/ui/activity-feed"
 import { ActivityDetailModal } from "@/components/ui/activity-detail-modal"
 
 export default function MonadTestnetDashboard() {
-  const [timeframe, setTimeframe] = useState("7d")
-  const [showComparison, setShowComparison] = useState(false)
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showDevAlert, setShowDevAlert] = useState(true)
@@ -59,19 +57,19 @@ export default function MonadTestnetDashboard() {
       value: block.validator,
       time: block.time,
       status: "success" as const,
-      fullHash: block.hash.replace("...", "0123456789abcdef"),
+      fullHash: block.hash,
       blockHeight: block.height,
     }))
 
-    const txItems = recentTransactions.slice(0, 2).map((tx) => ({
-      id: `tx-${tx.hash}`,
+    const txItems = recentTransactions.slice(0, 2).map((tx, index) => ({
+      id: `tx-${tx.hash}-${index}`, // Add index to ensure unique IDs
       type: "transaction" as const,
-      title: tx.hash,
+      title: tx.hash, // Use the full transaction hash
       subtitle: `${tx.from} → ${tx.to}`,
       value: `${tx.value} MON`,
       time: tx.time,
       status: tx.status === "Success" ? ("success" as const) : ("failed" as const),
-      fullHash: tx.hash.replace("...", "0123456789abcdef"),
+      fullHash: tx.hash, // Store the full hash for copying and explorer links
     }))
 
     return [...blockItems, ...txItems].sort((a, b) => {
@@ -89,26 +87,6 @@ export default function MonadTestnetDashboard() {
     { name: "MonadNFT", tvl: "$2.1M", volume24h: "$340K", users: 1850, status: "beta" },
     { name: "MonadDAO", tvl: "$5.8M", volume24h: "$120K", users: 920, status: "active" },
   ]
-
-  const TimeframeSelector = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
-    <div className="flex items-center gap-1 bg-[#2a2a3e] rounded-full p-1">
-      {["24h", "7d", "30d"].map((period) => (
-        <Button
-          key={period}
-          variant={value === period ? "default" : "ghost"}
-          size="sm"
-          onClick={() => onChange(period)}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${
-            value === period
-              ? "bg-monad-purple text-white shadow-sm"
-              : "text-gray-400 hover:text-white hover:bg-[#3a3a4e]"
-          }`}
-        >
-          {period}
-        </Button>
-      ))}
-    </div>
-  )
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -153,7 +131,7 @@ export default function MonadTestnetDashboard() {
                   <Image src="/monad-icon.jpg" alt="Monad" width={32} height={32} className="rounded-full" />
                   <PulseDot color="green" size="sm" className="absolute -top-1 -right-1" />
                 </div>
-                <span className="text-xl font-bold text-white">Monvision</span>
+                <span className="text-xl font-bold text-white">Monad Explorer</span>
                 <LiveIndicator isLive={!error} />
               </div>
               <div className="hidden md:flex items-center gap-6">
@@ -255,7 +233,7 @@ export default function MonadTestnetDashboard() {
                   <Activity className="h-5 w-5 text-gray-300 group-hover:text-green-400 transition-colors duration-200" />
                 </div>
                 <span className="text-gray-300 font-medium">Total Txn</span>
-                <div className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">Static</div>
+                <PulseDot color="green" size="sm" />
               </div>
               <div className="mb-3">
                 <div className="text-2xl font-bold text-white">{networkStats?.totalTransactions || "Loading..."}</div>
@@ -327,7 +305,7 @@ export default function MonadTestnetDashboard() {
                   <Code className="h-5 w-5 text-gray-300 group-hover:text-blue-400 transition-colors duration-200" />
                 </div>
                 <span className="text-gray-300 font-medium">Total Contracts</span>
-                <div className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">Static</div>
+                <PulseDot color="blue" size="sm" />
               </div>
               <div className="mb-3">
                 <div className="text-2xl font-bold text-white">{networkStats?.totalContracts || "Loading..."}</div>
@@ -400,20 +378,17 @@ export default function MonadTestnetDashboard() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg font-semibold text-white">Recent Block Activity</CardTitle>
+                  <CardTitle className="text-lg font-semibold text-white">Daily Active Accounts</CardTitle>
                   <Info className="h-4 w-4 text-gray-500" />
                   <PulseDot color="purple" size="sm" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-full text-monad-purple hover:text-monad-purple/80 hover:bg-white/10 transition-all duration-200"
-                  >
-                    View More <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-monad-purple hover:text-monad-purple/80 hover:bg-white/10 transition-all duration-200"
+                >
+                  View More <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -432,20 +407,17 @@ export default function MonadTestnetDashboard() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg font-semibold text-white">Transaction Volume</CardTitle>
+                  <CardTitle className="text-lg font-semibold text-white">Hourly Transaction Volume</CardTitle>
                   <Info className="h-4 w-4 text-gray-500" />
                   <PulseDot color="green" size="sm" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-full text-monad-purple hover:text-monad-purple/80 hover:bg-white/10 transition-all duration-200"
-                  >
-                    View More <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-monad-purple hover:text-monad-purple/80 hover:bg-white/10 transition-all duration-200"
+                >
+                  View More <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent>

@@ -39,6 +39,29 @@ export function ActivityDetailModal({ item, isOpen, onClose }: ActivityDetailMod
     }
   }
 
+  const handleViewInExplorer = () => {
+    const baseUrl = "https://testnet.monadexplorer.com"
+    let explorerUrl = ""
+
+    switch (item.type) {
+      case "block":
+        explorerUrl = `${baseUrl}/block/${item.blockHeight || item.title.replace("Block #", "")}`
+        break
+      case "transaction":
+        const txHash = item.fullHash || item.title
+        explorerUrl = `${baseUrl}/tx/${txHash}`
+        break
+      case "contract":
+        const contractAddress = item.fullHash || item.title
+        explorerUrl = `${baseUrl}/address/${contractAddress}`
+        break
+      default:
+        explorerUrl = baseUrl
+    }
+
+    window.open(explorerUrl, "_blank", "noopener,noreferrer")
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "success":
@@ -157,10 +180,7 @@ export function ActivityDetailModal({ item, isOpen, onClose }: ActivityDetailMod
           <Button
             variant="outline"
             className="flex-1 border-gray-600 text-gray-300 hover:bg-[#2a2a3e]"
-            onClick={() => {
-              // Open in block explorer
-              console.log("Opening in explorer:", item)
-            }}
+            onClick={handleViewInExplorer}
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             View in Explorer

@@ -82,12 +82,36 @@ export function ActivityFeed({ items, className, maxItems = 5, onItemClick }: Ac
     }
   }
 
+  const handleExplorerClick = (item: ActivityItem, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const baseUrl = "https://testnet.monadexplorer.com"
+    let explorerUrl = ""
+
+    switch (item.type) {
+      case "block":
+        explorerUrl = `${baseUrl}/block/${item.blockHeight || item.title.replace("Block #", "")}`
+        break
+      case "transaction":
+        const txHash = item.fullHash || item.title
+        explorerUrl = `${baseUrl}/tx/${txHash}`
+        break
+      case "contract":
+        const contractAddress = item.fullHash || item.title
+        explorerUrl = `${baseUrl}/address/${contractAddress}`
+        break
+      default:
+        explorerUrl = baseUrl
+    }
+
+    window.open(explorerUrl, "_blank", "noopener,noreferrer")
+  }
+
   const handleItemClick = (item: ActivityItem) => {
     if (onItemClick) {
       onItemClick(item)
     } else {
-      // Default behavior - open in explorer (placeholder)
-      console.log("Opening item details:", item)
+      // Default behavior - open in explorer
+      handleExplorerClick(item, {} as React.MouseEvent)
     }
   }
 
@@ -115,6 +139,35 @@ export function ActivityFeed({ items, className, maxItems = 5, onItemClick }: Ac
       default:
         return "text-gray-400"
     }
+  }
+
+  const formatDisplayText = (text: string, type: string) => {
+    if (type === "transaction" && text.length > 20) {
+      // For transaction hashes, show first 10 and last 6 characters
+      return `${text.slice(0, 10)}...${text.slice(-6)}`
+    }
+    if (type === "block") {
+      return text // Don't truncate block titles
+    }
+    if (text.length > 30) {
+      return `${text.slice(0, 30)}...`
+    }
+    return text
+  }
+
+  const formatSubtitle = (subtitle: string) => {
+    // For addresses in subtitle (from → to), truncate each address
+    if (subtitle.includes(" → ")) {
+      const [from, to] = subtitle.split(" → ")
+      const formatAddr = (addr: string) => {
+        if (addr.length > 10) {
+          return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+        }
+        return addr
+      }
+      return `${formatAddr(from)} → ${formatAddr(to)}`
+    }
+    return subtitle
   }
 
   return (
@@ -151,8 +204,8 @@ export function ActivityFeed({ items, className, maxItems = 5, onItemClick }: Ac
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-white truncate group-hover:text-monad-purple transition-colors duration-200">
-                {item.title}
+              <p className="text-sm font-medium text-white font-mono group-hover:text-monad-purple transition-colors duration-200">
+                {formatDisplayText(item.title, item.type)}
               </p>
               {item.value && (
                 <span className="text-sm font-medium text-gray-300 ml-2 group-hover:text-white transition-colors duration-200">
@@ -161,8 +214,8 @@ export function ActivityFeed({ items, className, maxItems = 5, onItemClick }: Ac
               )}
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-400 truncate group-hover:text-gray-300 transition-colors duration-200">
-                {item.subtitle}
+              <p className="text-xs text-gray-400 font-mono group-hover:text-gray-300 transition-colors duration-200">
+                {formatSubtitle(item.subtitle)}
               </p>
               <span className="text-xs text-gray-500 ml-2 group-hover:text-gray-400 transition-colors duration-200">
                 {item.time}
@@ -189,11 +242,7 @@ export function ActivityFeed({ items, className, maxItems = 5, onItemClick }: Ac
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                // Open in block explorer (placeholder)
-                console.log("Opening in explorer:", item)
-              }}
+              onClick={(e) => handleExplorerClick(item, e)}
               className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 hover:bg-[#3a3a4e]"
             >
               <ExternalLink className="h-3 w-3 text-gray-400" />
